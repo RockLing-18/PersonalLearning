@@ -62,38 +62,61 @@
 
 #define BUFFER_SIZE 5
 int buffer[BUFFER_SIZE];
-sem_t empty, full;  // 信号量：空槽位、已填充槽位
-pthread_mutex_t mutex;  // 互斥锁保护缓冲区
+sem_t empty, full;
+pthread_mutex_t mutex;
+
+// 辅助函数：获取信号量当前值
+void print_sem_value(const char* name, sem_t* sem) {
+    int val;
+    sem_getvalue(sem, &val);
+    printf("%s: %d\n", name, val);
+}
 
 void* producer(void* arg) {
     for (int i = 0; i < 10; i++) {
-        sem_wait(&empty);  // P(empty)：等待空槽位
+        print_sem_value("Producer P(empty)前", &empty);
+        sem_wait(&empty);  // 空槽位-1
+        print_sem_value("Producer P(empty)后", &empty);
+
         pthread_mutex_lock(&mutex);
-        buffer[i % BUFFER_SIZE] = i;  // 生产数据
-        printf("Producer: %d\n", i);
+        buffer[i % BUFFER_SIZE] = i;
+        printf("Producer写入: %d\n", i);
         pthread_mutex_unlock(&mutex);
-        sem_post(&full);   // V(full)：增加已填充计数
+
+        print_sem_value("Producer V(full)前", &full);
+        sem_post(&full);   // 已填充+1
+        print_sem_value("Producer V(full)后", &full);
     }
     return NULL;
 }
 
 void* consumer(void* arg) {
     for (int i = 0; i < 10; i++) {
-        sem_wait(&full);   // P(full)：等待数据
+        print_sem_value("Consumer P(full)前", &full);
+        sem_wait(&full);   // 等待数据
+        print_sem_value("Consumer P(full)后", &full);
+
         pthread_mutex_lock(&mutex);
-        int item = buffer[i % BUFFER_SIZE];  // 消费数据
-        printf("Consumer: %d\n", item);
+        int item = buffer[i % BUFFER_SIZE];
+        printf("Consumer读取: %d\n", item);
         pthread_mutex_unlock(&mutex);
-        sem_post(&empty);  // V(empty)：释放空槽位
+
+        print_sem_value("Consumer V(empty)前", &empty);
+        sem_post(&empty);  // 释放空槽位
+        print_sem_value("Consumer V(empty)后", &empty);
     }
     return NULL;
 }
 
 int main() {
     pthread_t prod, cons;
-    sem_init(&empty, 0, BUFFER_SIZE);  // 初始化空槽位为5
-    sem_init(&full, 0, 0);             // 初始化已填充为0
+    sem_init(&empty, 0, BUFFER_SIZE);  // 空槽位初始值=5
+    sem_init(&full, 0, 0);              // 已填充初始值=0
     pthread_mutex_init(&mutex, NULL);
+
+    // 打印初始值
+    print_sem_value("[初始化] empty", &empty);
+    print_sem_value("[初始化] full", &full);
 
     pthread_create(&prod, NULL, producer, NULL);
     pthread_create(&cons, NULL, consumer, NULL);
