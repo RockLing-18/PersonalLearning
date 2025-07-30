@@ -118,5 +118,14 @@ public:
 	std::cout << ptr4->size() << std::endl; // 成员访问输出：5
 }
 
+{
+	管理文件句柄（自定义删除器）
+	void file_deleter(FILE* fp) { 
+	    if (fp) fclose(fp); 
+	}
+
+	SimpleSharedPtr<FILE> file_ptr(fopen("data.txt", "r"), file_deleter);
+}
+
 */
 
