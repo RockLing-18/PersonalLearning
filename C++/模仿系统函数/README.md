@@ -1,1 +1,1 @@
-实现strcpy、strncpy、memcpy
+实现strcpy、strncpy、memcpy、 memmove
