@@ -47,3 +47,30 @@ void* RockMemcpy(void* dest, void const* source, size_t size)
 
 	return ret;  // 返回初始地址[1,6](@ref)
 }
+
+void* RockMemmove(void* dest, const void* source, size_t count) {
+	char* d = (char*)dest;
+	const char* s = (const char*)source;
+	if (s == d || count == 0) return dest;  // 无操作条件
+
+	if (d > s && d < s + count) 
+	{
+		// 正向重叠：源在目标左侧
+		d += count - 1;
+		s += count - 1;
+		while (count--)
+		{
+			*d-- = *s--; // 反向复制
+		}
+	}
+	else
+	{
+		// 无重叠或逆向重叠
+		while (count--)
+		{
+			*d++ = *s++; // 正向复制
+		}
+	}
+
+	return dest;
+}
